@@ -1,3 +1,5 @@
-.not-log-in{
+.not-logged-in,
+.logged-in,
+.role-admin {
     display: none;
 }
