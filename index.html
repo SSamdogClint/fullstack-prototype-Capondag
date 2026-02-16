@@ -14,7 +14,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="not-authenticated">
 
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -33,44 +33,249 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
 
-                    <!-- NOT LOGGED IN LINKS -->
-                    <li class="nav-item not-logged-in">
+                    <li class="nav-item role-logged-out">
                         <a class="nav-link" href="#">Login</a>
                     </li>
-                    <li class="nav-item not-logged-in">
-                        <a class="nav-link" href="#">Register</a>
+                    <li class="nav-item role-logged-out">
+                        <a class="nav-link" href="#" onclick="showPage('register')">Register</a>
                     </li>
-                    <!-- LOGGED IN DROPDOWN -->
-                    <li class="nav-item dropdown logged-in">
+
+                    <li class="nav-item dropdown role-logged-in">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <span id="usernameDisplay">Username</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Profile</a></li>
-
-                            <!-- ADMIN LINKS INSIDE DROPDOWN -->
-                            <li class="role-admin"><hr class="dropdown-divider"></li>
-                            <li class="role-admin">
-                                <a class="dropdown-item" href="#">Employees</a>
-                            </li>
-                            <li class="role-admin">
-                                <a class="dropdown-item" href="#">Accounts</a>
-                            </li>
-                            <li class="role-admin">
-                                <a class="dropdown-item" href="#">Departments</a>
-                            </li>
-                            
+                            <li><a class="dropdown-item" href="#" onclick="showPage('profile-section')">Profile</a></li>
+                            <li class="role-admin"><a class="dropdown-item" href="#" onclick="showPage('employees-section')">Employees</a></li>
+                            <li class="role-admin"><a class="dropdown-item" href="#">Accounts</a></li>
+                            <li class="role-admin"><a class="dropdown-item" href="#">Departments</a></li>
                             <li><a class="dropdown-item" href="#">My Requests</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" href="#">Logout</a></li>
                         </ul>
                     </li>
-
                 </ul>
             </div>
         </div>
     </nav>
 
+    <main class="container mt-4">
+
+        <!-- ================= HOME ================= -->
+        <section id="home" class="page active">
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+
+                    <h3 class="mb-3">Welcome to Full-Stack App</h3>
+
+                    <p>A static prototype before backend integration. Simulates:</p>
+
+                    <ul>
+                        <li>Email registration + fake verification</li>
+                        <li>Login with JWT-like token simulation</li>
+                        <li>Role-based UI (Admin/User)</li>
+                        <li>CRUD for Employees, Departments, Requests</li>
+                    </ul>
+
+                    <div class="alert alert-info mt-3">
+                        ⚠️ <strong>Note:</strong> All data is stored in 
+                        <code>localStorage</code>. Refresh to reset.
+                    </div>
+
+                    <button class="btn btn-primary">
+                        Get Started →
+                    </button>
+
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= REGISTER ================= -->
+        <section id="register" class="page">
+
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+
+                            <h4 class="mb-4">Register Account</h4>
+
+                            <form onsubmit="handleRegister(event)">
+
+                                <div class="mb-3">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" id="firstName" class="form-control">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" id="lastName" class="form-control">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" id="email" class="form-control">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" id="password" class="form-control">
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success">Sign Up</button>
+                                    <button type="button" class="btn btn-secondary" onclick="showPage('home')">Cancel</button>
+                                </div>
+
+                            </form>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= VERIFY EMAIL ================= -->
+        <section id="verify" class="page">
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+
+                    <h3 class="mb-3">Verify Your Email</h3>
+
+                    <!-- Initial message -->
+                    <div id="verifyMessage" class="alert alert-success">
+                        ✅ A verification link has been sent to <strong id="verifyEmail">your@email.com</strong>.
+                    </div>
+
+                    <p>For demo purposes, click below to simulate verification:</p>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success" onclick="simulateVerification()">
+                            ✅ Simulate Email Verification
+                        </button>
+
+                        <button class="btn btn-secondary" onclick="showPage('login')">
+                            Go to Login
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= LOGIN ================= -->
+        <section id="login" class="page">
+
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+
+                    <!-- Verification success message -->
+                    <div id="loginVerifiedMessage" class="alert alert-success d-none">
+                        ✅ Email verified! You may now log in.
+                    </div>
+
+                    <h3 class="mb-4">Login</h3>
+
+                    <form onsubmit="event.preventDefault(); login('admin');">
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control">
+                        </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">Login</button>
+                                <button type="button" class="btn btn-secondary" onclick="showPage('home')">Cancel</button>
+                            </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PROfILE ================= -->
+        <section id="profile-section" class="container mt-5 d-none">
+            <div class="card p-4">
+                <h4>My Profile</h4>
+
+                <p><strong>Admin User</strong></p>
+                <p>Email: admin@example.com</p>
+                <p>Role: Admin</p>
+
+                <button class="btn btn-outline-primary">Edit Profile</button>
+            </div>
+            </section>
+            <!-- ============EMPLOYEE================= -->
+            <section id="employees-section" class="container mt-5 d-none">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>Employees</h4>
+                <button class="btn btn-success">+ Add Employee</button>
+            </div>
+
+            <table class="table table-bordered mt-3">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Dept</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td colspan="5" class="text-center">No employees.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <!-- Add Employee Form -->
+            <div class="card p-4 mt-4">
+                <h5>Add/Edit Employee</h5>
+
+                <form>
+                <div class="mb-3">
+                    <label>Employee ID</label>
+                    <input type="text" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label>User Email</label>
+                    <input type="email" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label>Position</label>
+                    <input type="text" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label>Department</label>
+                    <input type="text" class="form-control" value="Engineering">
+                </div>
+
+                <div class="mb-3">
+                    <label>Hire Date</label>
+                    <input type="date" class="form-control">
+                </div>
+
+                <button class="btn btn-primary">Save</button>
+                <button type="reset" class="btn btn-secondary">Cancel</button>
+                </form>
+            </div>
+        </section>
+    </main>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
