@@ -334,8 +334,184 @@ function login(event) {
     }
 }
 
+// logout function
+function logout() {
+    localStorage.removeItem('auth_token');
+    setAuthState(null);
+    navigateTo('#/');
+}
 
+// edit profile
+function editProfile() {
+    alert("changed to Edit profile page!");
+}
 
+// read department table
+function renderDepartments() {
+    const tableBody = document.getElementById('department-table-body');
+    if (!tableBody) return;
+
+    // Clear existing static rows
+    tableBody.innerHTML = '';
+
+    // Loop through window.db.departments
+    window.db.departments.forEach((dept) => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+            <td>${dept.name}</td>
+            <td>${dept.description || 'No description available'}</td>
+            <td>
+                <button type="button" class="btn btn-sm btn-primary" onclick="editDepartment(${dept.id})">Edit</button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="deleteDepartment(${dept.id})">Delete</button>
+            </td>
+        `;
+
+        tableBody.appendChild(row);
+    });
+}
+
+// render accounts
+function renderAccounts() {
+    const tableBody = document.getElementById('account-table-body');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    window.db.accounts.forEach((acc, index) => {
+        const isSelf = currentUser && acc.email === currentUser.email;
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${acc.Fname} ${acc.Lname}<br><small class="text-muted">${acc.email}</small></td>
+            <td><span class="badge bg-secondary">${acc.role}</span></td>
+            <td>${acc.verified ? '<span class="text-success">&#9989;</span>' : '<span class="text-danger">&#x2715;</span>'}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#account-modal")" onclick="openEditAccount('${acc.email}')">Edit</button>
+                    <button class="btn btn-outline-warning" onclick="resetPassword('${acc.email}')">Reset Password</button>
+                    <button class="btn btn-outline-danger" ${isSelf ? 'disabled' : ''} onclick="deleteAccount('${acc.email}')">Delete</button>
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// edit & and populate account
+let editingEmail = null;
+
+window.openEditAccount = function (email) {
+    const acc = window.db.accounts.find(a => a.email === email);
+    if (!acc) return;
+
+    editingEmail = email; // Mark as editing
+
+    // Fill inputs using IDs from your HTML
+    document.getElementById('accFname').value = acc.Fname;
+    document.getElementById('accLname').value = acc.Lname;
+    document.getElementById('accEmail').value = acc.email;
+    document.getElementById('accEmail').readOnly = true; // Email is the unique key
+    document.getElementById('accPassword').value = acc.password;
+    document.getElementById('accRole').value = acc.role;
+    document.getElementById('isVerified').checked = !!acc.verified;
+
+    // Change Modal UI
+    document.querySelector('#account-modal .modal-title').innerText = "Edit Account";
+
+    // Show Modal manually (stop hanging)
+    const modalEl = document.getElementById('account-modal');
+    const modalInst = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modalInst.show();
+};
+
+// password reset(account)
+window.resetPassword = function (email) {
+    // Ask for the new password
+    const newPw = prompt(`Enter new password for ${email} (Minimum 6 characters):`);
+
+    // If user clicks "Cancel", newPw will be null
+    if (newPw === null) return;
+
+    // Validation
+    if (newPw.trim().length < 6) {
+        alert("Error: Password is too short! It must be at least 6 characters.");
+    } else {
+        // 4. Find account and update
+        const acc = window.db.accounts.find(a => a.email === email);
+        if (acc) {
+            acc.password = newPw;
+            saveToStorage(); // Sync with localStorage
+            alert("Password updated successfully!");
+        }
+    }
+};
+
+// delete account (account)
+window.deleteAccount = function (email) {
+    // 1. Prevent self-deletion (Double Check)
+    if (currentUser && email === currentUser.email) {
+        alert("You cannot delete your own account while logged in.");
+        return;
+    }
+
+    // Confirm action
+    const confirmed = confirm(`Are you sure you want to permanently delete the account: ${email}?`);
+
+    if (confirmed) {
+        //  Filter out the account
+        window.db.accounts = window.db.accounts.filter(acc => acc.email !== email);
+
+        //  Save and Update
+        saveToStorage();
+        renderAccounts();
+        alert("Account deleted.");
+    }
+};
+
+// render employees
+function renderEmployees() {
+    const tableBody = document.getElementById('employee-table-body');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    window.db.employees.forEach(emp => {
+        // Join data from accounts and departments
+        const account = window.db.accounts.find(a => a.email === emp.userEmail);
+        const dept = window.db.departments.find(d => d.id == emp.deptId);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${emp.employeeId}</td>
+            <td>
+                <b>${account ? account.Fname + ' ' + account.Lname : 'Unknown'}</b><br>
+                <small class="text-muted">${emp.userEmail}</small>
+            </td>
+            <td>${emp.position}</td>
+            <td>${dept ? dept.name : 'N/A'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee('${emp.employeeId}')">Remove</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// populate Department dropwdown
+function populateDeptDropdown() {
+    const deptSelect = document.getElementById('employeeDepartment');
+    if (!deptSelect) return;
+    // loop through the departments db to get departments
+    window.db.departments.forEach(dept => {
+        const opt = document.createElement('option');
+        opt.value = dept.id;
+        opt.textContent = dept.name;
+        deptSelect.appendChild(opt);
+    });
+}
 
 
 
