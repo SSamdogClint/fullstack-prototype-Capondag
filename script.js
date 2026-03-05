@@ -513,9 +513,147 @@ function populateDeptDropdown() {
     });
 }
 
+// employee form
+window.saveEmployee = function () {
+    // get values from the input
+    const empId = document.getElementById('employeeId').value;
+    const email = document.getElementById('employeeEmail').value;
+    const pos = document.getElementById('employeePosition').value;
+    const dept = document.getElementById('employeeDepartment').value;
+    const hireDate = document.getElementById('hire-date')?.value || "";
 
+    if (!empId || !email || !pos || !dept || !hireDate) {
+        alert("Please fill in all required fields.");
+        return;
+    }
 
+    // Check if the User Email exists in accounts
+    const accountExists = window.db.accounts.some(acc => acc.email === email);
+    if (!accountExists) {
+        alert("Error: No account found with this email. Create the account first.");
+        return;
+    }
 
+    // Create new Employee 
+    const newEmp = {
+        employeeId: empId,
+        userEmail: email,
+        position: pos,
+        deptId: dept,
+        hireDate: hireDate
+    };
+
+    // Save to database
+    window.db.employees.push(newEmp);
+    saveToStorage();
+    renderEmployees();
+
+    //Close Modal and Reset Form
+    const modalEl = document.getElementById('employee-modal');
+    const modalInst = bootstrap.Modal.getInstance(modalEl);
+    if (modalInst) modalInst.hide();
+
+    document.getElementById('employeeForm').reset();
+    alert("Employee saved successfully!");
+};
+
+// delete employee
+window.deleteEmployee = function (id) {
+    if (confirm("Permanently remove this employee record?")) {
+        window.db.employees = window.db.employees.filter(e => e.employeeId !== id);
+        saveToStorage();
+        renderEmployees();
+    }
+};
+
+// for status badges
+function getStatusBadge(status) {
+    if (status === 'Approved') return 'bg-success';
+    if (status === 'Rejected') return 'bg-danger';
+    return 'bg-warning text-dark';
+}
+
+// render request page
+window.renderRequests = function () {
+    const userView = document.getElementById('user-request-view');
+    const adminView = document.getElementById('admin-request-view');
+    const emptyView = document.getElementById('empty-request-view');
+    const tableView = document.getElementById('table-request-view');
+    const userTable = document.getElementById('user-request-table');
+    const adminTable = document.getElementById('admin-request-table');
+    const hideRequest = document.getElementById('request-add');
+
+    if (!emptyView || !tableView || !currentUser) return;
+    // Admin view
+    if (currentUser.role === 'admin') {
+        userView.style.display = 'none';
+        adminView.style.display = 'block';
+        hideRequest.style.display = 'none';
+
+        const allRequests = window.db.requests || [];
+        adminTable.innerHTML = '';
+
+        allRequests.forEach(req => {
+            const badge = getStatusBadge(req.status);
+            const items = req.items.map(item => `${item.name} (x${item.qty})`).join(', ');
+
+            const row = `<tr>
+                <td><small>${req.employeeEmail}</small></td>
+                <td>${req.date}</td>
+                <td>${req.type}</td>
+                <td>${items}</td>
+                <td><span class="badge ${badge}">${req.status}</span></td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-success" onclick="processRequest(${req.id}, 'Approved')" 
+                            ${req.status !== 'Pending' ? 'disabled' : ''}>Approve</button>
+                        <button class="btn btn-danger" onclick="processRequest(${req.id}, 'Rejected')" 
+                            ${req.status !== 'Pending' ? 'disabled' : ''}>Reject</button>
+                    </div>
+                </td>
+            </tr>`;
+            adminTable.insertAdjacentHTML('beforeend', row);
+        });
+    } else {
+        // user view
+        adminView.style.display = 'none';
+        userView.style.display = 'block';
+
+        const userRequest = (window.db.requests || []).filter(request => request.employeeEmail === currentUser.email);
+
+        if (userRequest.length === 0) {
+            emptyView.style.display = 'block';
+            tableView.style.display = 'none';
+        } else {
+            emptyView.style.display = 'none';
+            tableView.style.display = 'block';
+            hideRequest.style.display = 'block';
+            userTable.innerHTML = '';
+
+            userRequest.forEach(req => {
+                const badge = getStatusBadge(req.status);
+                const items = req.items.map(item => `${item.name} (x${item.qty})`).join(', ');
+                const row = `<tr>
+                    <td>${req.date}</td>
+                    <td>${req.type}</td>
+                    <td>${items}</td>
+                    <td><span class="badge ${badge}">${req.status}</span></td>
+                </tr>`;
+                userTable.insertAdjacentHTML('beforeend', row);
+            });
+        }
+    }
+};
+
+// Admin:Approve/Reject
+window.processRequest = function (id, newStatus) {
+    const req = window.db.requests.find(request => request.id === id);
+    if (req) {
+        req.status = newStatus;
+        saveToStorage();
+        renderRequests();
+    }
+};
 
 
 
