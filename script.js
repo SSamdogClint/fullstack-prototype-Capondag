@@ -655,5 +655,70 @@ window.processRequest = function (id, newStatus) {
     }
 };
 
+// dynamic item row
+window.addRequestItemRow = function () {
+    const container = document.getElementById('dynamic-items-container');
+    const rowId = Date.now();
+    // insert request item
+    const html = `
+        <div class="row g-2 mb-2 align-items-center" id="row-${rowId}">
+            <div class="col-8">
+                <input type="text" class="form-control form-control-sm item-name" placeholder="Item Name" required>
+            </div>
+            <div class="col-3">
+                <input type="number" class="form-control form-control-sm item-qty" value="1" min="1">
+            </div>
+            <div class="col-1 text-end">
+                <button type="button" class="btn-close" style="font-size:0.6rem" onclick="document.getElementById('row-${rowId}').remove()"></button>
+            </div>
+        </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+};
 
+window.openRequestModal = function () {
+    const container = document.getElementById('dynamic-items-container');
+    container.querySelectorAll('.row').forEach(row => row.remove());
 
+    addRequestItemRow();
+
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('request-modal'));
+    modal.show();
+};
+
+// request submit
+const requestForm = document.getElementById('requestForm');
+if (requestForm) {
+    requestForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const names = document.querySelectorAll('.item-name');
+        const qtys = document.querySelectorAll('.item-qty');
+        const items = [];
+
+        names.forEach((input, i) => {
+            if (input.value.trim() !== "") {
+                items.push({ name: input.value.trim(), qty: qtys[i].value });
+            }
+        });
+
+        if (items.length === 0) return alert("Please add at least one item.");
+
+        const newRequest = {
+            id: Date.now(),
+            type: document.getElementById('requestType').value,
+            items: items,
+            status: "Pending",
+            date: new Date().toLocaleDateString(),
+            employeeEmail: currentUser.email
+        };
+
+        if (!window.db.requests) window.db.requests = [];
+        window.db.requests.push(newRequest);
+
+        saveToStorage();
+        renderRequests();
+
+        bootstrap.Modal.getInstance(document.getElementById('request-modal')).hide();
+        this.reset();
+    });
+}
