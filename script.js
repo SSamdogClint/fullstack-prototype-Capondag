@@ -371,17 +371,21 @@ function renderDepartments() {
     });
 }
 
-// render accounts
+// Render the accounts table on the admin Accounts page
 function renderAccounts() {
     const tableBody = document.getElementById('account-table-body');
-    if (!tableBody) return;
+    if (!tableBody) return; // Exit if table body not found
 
+    // Clear existing rows
     tableBody.innerHTML = '';
 
+    // Loop through all accounts in the database
     window.db.accounts.forEach((acc, index) => {
+        // Check if this account is the currently logged-in user
         const isSelf = currentUser && acc.email === currentUser.email;
         const row = document.createElement('tr');
 
+        // Populate table row with account info and action buttons
         row.innerHTML = `
             <td>${index + 1}</td>
             <td>${acc.Fname} ${acc.Lname}<br><small class="text-muted">${acc.email}</small></td>
@@ -390,99 +394,106 @@ function renderAccounts() {
             <td>
                 <div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                        data-bs-target="#account-modal")" onclick="openEditAccount('${acc.email}')">Edit</button>
+                        data-bs-target="#account-modal" onclick="openEditAccount('${acc.email}')">Edit</button>
                     <button class="btn btn-outline-warning" onclick="resetPassword('${acc.email}')">Reset Password</button>
                     <button class="btn btn-outline-danger" ${isSelf ? 'disabled' : ''} onclick="deleteAccount('${acc.email}')">Delete</button>
                 </div>
             </td>
         `;
+        // Add the row to the table
         tableBody.appendChild(row);
     });
 }
 
-// edit & and populate account
+// Open the account edit modal and populate it with existing account data
 let editingEmail = null;
 
 window.openEditAccount = function (email) {
+    // Find the account in the database by email
     const acc = window.db.accounts.find(a => a.email === email);
-    if (!acc) return;
+    if (!acc) return; // Exit if account not found
 
-    editingEmail = email; // Mark as editing
+    editingEmail = email; // Mark this account as currently being edited
 
-    // Fill inputs using IDs from your HTML
+    // Populate form fields with existing account data
     document.getElementById('accFname').value = acc.Fname;
     document.getElementById('accLname').value = acc.Lname;
     document.getElementById('accEmail').value = acc.email;
-    document.getElementById('accEmail').readOnly = true; // Email is the unique key
+    document.getElementById('accEmail').readOnly = true; // Email is unique and cannot be changed
     document.getElementById('accPassword').value = acc.password;
     document.getElementById('accRole').value = acc.role;
     document.getElementById('isVerified').checked = !!acc.verified;
 
-    // Change Modal UI
+    // Update modal title to indicate editing mode
     document.querySelector('#account-modal .modal-title').innerText = "Edit Account";
 
-    // Show Modal manually (stop hanging)
+    // Display the modal using Bootstrap
     const modalEl = document.getElementById('account-modal');
     const modalInst = bootstrap.Modal.getOrCreateInstance(modalEl);
     modalInst.show();
 };
 
-// password reset(account)
+// Reset a user's password by prompting for a new one
 window.resetPassword = function (email) {
-    // Ask for the new password
+    // Prompt the admin to enter a new password for the specified email
     const newPw = prompt(`Enter new password for ${email} (Minimum 6 characters):`);
 
-    // If user clicks "Cancel", newPw will be null
+    // Exit if the prompt was canceled
     if (newPw === null) return;
 
-    // Validation
+    // Validate password length
     if (newPw.trim().length < 6) {
-        alert("Error: Password is too short! It must be at least 6 characters.");
+        alert("Error: Password must be at least 6 characters long.");
     } else {
-        // 4. Find account and update
+        // Find the account in the database and update the password
         const acc = window.db.accounts.find(a => a.email === email);
         if (acc) {
             acc.password = newPw;
-            saveToStorage(); // Sync with localStorage
+            saveToStorage(); // Save changes to LocalStorage
             alert("Password updated successfully!");
         }
     }
 };
 
-// delete account (account)
+// Delete a user account by email
 window.deleteAccount = function (email) {
-    // 1. Prevent self-deletion (Double Check)
+    // Prevent the currently logged-in admin from deleting their own account
     if (currentUser && email === currentUser.email) {
         alert("You cannot delete your own account while logged in.");
         return;
     }
 
-    // Confirm action
+    // Ask for confirmation before permanently deleting the account
     const confirmed = confirm(`Are you sure you want to permanently delete the account: ${email}?`);
 
     if (confirmed) {
-        //  Filter out the account
+        // Remove the account from the database
         window.db.accounts = window.db.accounts.filter(acc => acc.email !== email);
 
-        //  Save and Update
+        // Save the updated database and refresh the accounts list
         saveToStorage();
         renderAccounts();
+
+        // Notify the admin that the account has been deleted
         alert("Account deleted.");
     }
 };
 
-// render employees
+// Render the employee table on the Employees page
 function renderEmployees() {
     const tableBody = document.getElementById('employee-table-body');
-    if (!tableBody) return;
+    if (!tableBody) return; // Exit if table body is not found
 
+    // Clear existing table rows
     tableBody.innerHTML = '';
 
+    // Iterate through all employees in the database
     window.db.employees.forEach(emp => {
-        // Join data from accounts and departments
+        // Retrieve the associated account and department data
         const account = window.db.accounts.find(a => a.email === emp.userEmail);
         const dept = window.db.departments.find(d => d.id == emp.deptId);
 
+        // Create a new table row for each employee
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${emp.employeeId}</td>
@@ -496,45 +507,48 @@ function renderEmployees() {
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee('${emp.employeeId}')">Remove</button>
             </td>
         `;
+        // Append the row to the table body
         tableBody.appendChild(row);
     });
 }
 
-// populate Department dropwdown
+// Populate the department dropdown in the employee form
 function populateDeptDropdown() {
     const deptSelect = document.getElementById('employeeDepartment');
-    if (!deptSelect) return;
-    // loop through the departments db to get departments
+    if (!deptSelect) return; // Exit if the dropdown element is not found
+
+    // Loop through all departments in the database
     window.db.departments.forEach(dept => {
+        // Create a new option element for each department
         const opt = document.createElement('option');
-        opt.value = dept.id;
-        opt.textContent = dept.name;
-        deptSelect.appendChild(opt);
+        opt.value = dept.id;       // Set the option value to the department ID
+        opt.textContent = dept.name; // Display the department name
+        deptSelect.appendChild(opt); // Add the option to the dropdown
     });
 }
-
-// employee form
+// Save a new employee from the employee form
 window.saveEmployee = function () {
-    // get values from the input
+    // Get values from form inputs
     const empId = document.getElementById('employeeId').value;
     const email = document.getElementById('employeeEmail').value;
     const pos = document.getElementById('employeePosition').value;
     const dept = document.getElementById('employeeDepartment').value;
     const hireDate = document.getElementById('hire-date')?.value || "";
 
+    // Validate required fields
     if (!empId || !email || !pos || !dept || !hireDate) {
         alert("Please fill in all required fields.");
         return;
     }
 
-    // Check if the User Email exists in accounts
+    // Ensure the user account exists before assigning as an employee
     const accountExists = window.db.accounts.some(acc => acc.email === email);
     if (!accountExists) {
         alert("Error: No account found with this email. Create the account first.");
         return;
     }
 
-    // Create new Employee 
+    // Create a new employee object
     const newEmp = {
         employeeId: empId,
         userEmail: email,
@@ -543,12 +557,12 @@ window.saveEmployee = function () {
         hireDate: hireDate
     };
 
-    // Save to database
+    // Save the employee to the database and update LocalStorage
     window.db.employees.push(newEmp);
     saveToStorage();
-    renderEmployees();
+    renderEmployees(); // Refresh the employee table
 
-    //Close Modal and Reset Form
+    // Close the modal and reset the form
     const modalEl = document.getElementById('employee-modal');
     const modalInst = bootstrap.Modal.getInstance(modalEl);
     if (modalInst) modalInst.hide();
@@ -557,10 +571,14 @@ window.saveEmployee = function () {
     alert("Employee saved successfully!");
 };
 
-// delete employee
+// Delete an employee record by employee ID
 window.deleteEmployee = function (id) {
+    // Ask for confirmation before deletion
     if (confirm("Permanently remove this employee record?")) {
+        // Remove the employee from the database
         window.db.employees = window.db.employees.filter(e => e.employeeId !== id);
+
+        // Save changes to LocalStorage and refresh the employee table
         saveToStorage();
         renderEmployees();
     }
@@ -573,7 +591,7 @@ function getStatusBadge(status) {
     return 'bg-warning text-dark';
 }
 
-// render request page
+// Render requests page for both users and admins
 window.renderRequests = function () {
     const userView = document.getElementById('user-request-view');
     const adminView = document.getElementById('admin-request-view');
@@ -583,7 +601,8 @@ window.renderRequests = function () {
     const adminTable = document.getElementById('admin-request-table');
     const hideRequest = document.getElementById('request-add');
 
-    if (!emptyView || !tableView || !currentUser) return;
+    if (!emptyView || !tableView || !currentUser) return; // Exit if essential elements or user not found
+
     // Admin view
     if (currentUser.role === 'admin') {
         userView.style.display = 'none';
@@ -594,7 +613,7 @@ window.renderRequests = function () {
         adminTable.innerHTML = '';
 
         allRequests.forEach(req => {
-            const badge = getStatusBadge(req.status);
+            const badge = getStatusBadge(req.status); // Get visual badge for request status
             const items = req.items.map(item => `${item.name} (x${item.qty})`).join(', ');
 
             const row = `<tr>
@@ -615,7 +634,7 @@ window.renderRequests = function () {
             adminTable.insertAdjacentHTML('beforeend', row);
         });
     } else {
-        // user view
+        // User view
         adminView.style.display = 'none';
         userView.style.display = 'block';
 
@@ -645,21 +664,26 @@ window.renderRequests = function () {
     }
 };
 
-// Admin:Approve/Reject
+// Admin function to approve or reject a request
 window.processRequest = function (id, newStatus) {
+    // Find the request in the database by its ID
     const req = window.db.requests.find(request => request.id === id);
     if (req) {
+        // Update the request status (Approved or Rejected)
         req.status = newStatus;
+
+        // Save changes to LocalStorage and refresh the request view
         saveToStorage();
         renderRequests();
     }
 };
 
-// dynamic item row
+// Add a dynamic row for entering a new request item
 window.addRequestItemRow = function () {
     const container = document.getElementById('dynamic-items-container');
-    const rowId = Date.now();
-    // insert request item
+    const rowId = Date.now(); // Unique ID for the row
+
+    // HTML for the new item row with name, quantity, and remove button
     const html = `
         <div class="row g-2 mb-2 align-items-center" id="row-${rowId}">
             <div class="col-8">
@@ -672,6 +696,8 @@ window.addRequestItemRow = function () {
                 <button type="button" class="btn-close" style="font-size:0.6rem" onclick="document.getElementById('row-${rowId}').remove()"></button>
             </div>
         </div>`;
+    
+    // Append the new row to the container
     container.insertAdjacentHTML('beforeend', html);
 };
 
@@ -685,12 +711,13 @@ window.openRequestModal = function () {
     modal.show();
 };
 
-// request submit
+// Handle request form submission
 const requestForm = document.getElementById('requestForm');
 if (requestForm) {
     requestForm.addEventListener('submit', function (e) {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
 
+        // Collect item names and quantities from the dynamic rows
         const names = document.querySelectorAll('.item-name');
         const qtys = document.querySelectorAll('.item-qty');
         const items = [];
@@ -701,10 +728,12 @@ if (requestForm) {
             }
         });
 
+        // Ensure at least one item is added
         if (items.length === 0) return alert("Please add at least one item.");
 
+        // Create a new request object
         const newRequest = {
-            id: Date.now(),
+            id: Date.now(), // Unique ID
             type: document.getElementById('requestType').value,
             items: items,
             status: "Pending",
@@ -712,12 +741,15 @@ if (requestForm) {
             employeeEmail: currentUser.email
         };
 
+        // Initialize requests array if not present
         if (!window.db.requests) window.db.requests = [];
         window.db.requests.push(newRequest);
 
+        // Save to LocalStorage and refresh the requests view
         saveToStorage();
         renderRequests();
 
+        // Close the modal and reset the form
         bootstrap.Modal.getInstance(document.getElementById('request-modal')).hide();
         this.reset();
     });
